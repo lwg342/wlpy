@@ -82,8 +82,14 @@ def generalized_thresholding(S, T, method = 'hard threshold'):
     """       
     if method == 'hard threshold':
         H = S
-        H[np.where(H < T)] = 0
-        return H
-    if method == 'other':
+        H[np.where(np.abs(H) < T)] = 0
+    if method == 'soft threshold':
+        H = S
+        H[np.where(np.abs(H) < T)] = 0
+        H[np.where(np.abs(H) >= T)] = H[np.where(np.abs(H) >= T)] - \
+            T[np.where(np.abs(H) >= T)]
+    else: 
         print('unfinished')
+        H = None
+    return H
 # %%
