@@ -73,7 +73,7 @@ def linear_probit(endog, params, add_constant = 1):
         
 
 # %%
-def generalized_thresholding(S, T, method = 'hard threshold'):
+def generalized_thresholding(S : np.ndarray, T : np.ndarray, method='hard threshold') -> np.ndarray:
     """
     H = [h_ij] where h_ij(s_ij, t_ij) computes the generalized shrinkaged estimates
     This function applies generalized thresholding to a matrix M \n
