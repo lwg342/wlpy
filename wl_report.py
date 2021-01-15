@@ -5,6 +5,7 @@ import os
 import logging
 import numpy as np
 import matplotlib.pyplot as plt
+from datetime import datetime as dt
 # %%
 
 
@@ -203,3 +204,20 @@ class DataReport(Report):
 
 # %%
 
+class Timer():
+    """
+    Keep log of time
+    """
+    
+    def __init__(self):
+        pass
+
+    def start(self):
+        self.ctime = dt.now()
+    
+    def click(self):
+        self.lapse = dt.now() - self.ctime 
+        print(self.lapse.total_seconds())
+        
+
+# %%
