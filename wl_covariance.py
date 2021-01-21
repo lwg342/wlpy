@@ -19,7 +19,7 @@ class WLCovariance():
         self.S_nlshrink = self.nonlin_shrink()
         
     def sample_cov(self):
-        _S = sk_cov.EmpiricalCovariance().fit(self.X).covariance_
+        _S = np.cov(np.array(self.X), rowvar= False)
         return _S
 
     def lw_lin_shrink(self):

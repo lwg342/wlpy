@@ -73,7 +73,7 @@ def linear_probit(endog, params, add_constant = 1):
         
 
 # %%
-def generalized_threshold(S : np.ndarray, T : np.ndarray, method='hard threshold') -> np.ndarray:
+def generalized_threshold(S : np.ndarray, T : np.ndarray, method, **kwargs) -> np.ndarray:
     """
     H = [h_ij] where h_ij(s_ij, t_ij) computes the generalized shrinkaged estimates
     This function applies generalized thresholding to a matrix M \n
@@ -84,13 +84,19 @@ def generalized_threshold(S : np.ndarray, T : np.ndarray, method='hard threshold
     if method == 'hard threshold':
         H = S
         H[np.where(np.abs(H) < T)] = 0
-    elif method == 'soft threshold':
+    elif method == 'old soft threshold':
         dim1, dim2 = S.shape
         vec_sgn = np.sign(S.flatten())
         vec_value = np.maximum(np.zeros(dim1 * dim2), np.abs(S.flatten()) - T.flatten())
         H = (vec_sgn * vec_value).reshape(dim1, dim2)
+    elif method == 'soft threshold':
+        H = np.sign(S) * ((np.abs(S) - T).clip(0))
+    elif method == 'soft threshold with sign':
+        H = kwargs['sign'] * ((np.abs(S) - T).clip(0))
     else: 
         print('unfinished')
         H = None
     return H
+
+
 # %%
