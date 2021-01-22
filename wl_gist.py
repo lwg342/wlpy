@@ -100,3 +100,18 @@ def generalized_threshold(S : np.ndarray, T : np.ndarray, method, **kwargs) -> n
 
 
 # %%
+def isPD(Hermitian_Matrix):
+    """
+    Judge if a **symmetric** matrix M is pd
+    """
+    try:
+        np.linalg.cholesky(Hermitian_Matrix)
+        # print('success')
+        return True
+    except np.linalg.LinAlgError:
+        return False
+
+# %%
+def isPSD(A, tol=1e-8):
+  E = np.linalg.eigvalsh(A)
+  return np.all(E > -tol)
