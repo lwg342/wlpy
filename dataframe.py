@@ -21,7 +21,7 @@ class DFManipulation():
         else:
             self.DF = DF[0]
 
-    def rolling_window(self, window_size, step, min_size=1, prune_nan = False, **kwargs):
+    def rolling_window(self, window_size, step, min_size=1, prune_nan=False, **kwargs):
         """
         Input: DF, one Pandas Dataframe\n
         window_size : the length of each window\n
@@ -45,12 +45,12 @@ class DFManipulation():
                 ends = ends + [date_list[i + window_size]]
         num_of_windows = len(starts)
         if prune_nan:
-            DF_rolling = [DF.loc[(DF.index >= starts[i]) & (DF.index < ends[i])].dropna(axis = 1)
-                      for i in range(num_of_windows)]
+            DF_rolling = [DF.loc[(DF.index >= starts[i]) & (DF.index < ends[i])].dropna(axis=1)
+                          for i in range(num_of_windows)]
         else:
             DF_rolling = [DF.loc[(DF.index >= starts[i]) * (DF.index < ends[i])]
-                      for i in range(num_of_windows)]
-            
+                          for i in range(num_of_windows)]
+
         return DF_rolling
 
     def show_number_of_nan(self, prune=False):

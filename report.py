@@ -10,31 +10,55 @@ from datetime import datetime as dt
 
 
 class Report():
-    def __init__(self, fullname = 'report', file_format = 'md') -> None:
-        self.file = fullname
-        self.file_format = file_format
+    def __init__(self, filename='report', file_format='md') -> None:
+        self.file = filename
+        self.format = file_format
+        self.full_path = f'{self.file}.{self.format}'
 
     def timestamp(self):
         from datetime import datetime
         self.timestr = datetime.now().strftime('%Y-%m-%d %H:%M')
         self.jot(self.timestr)
 
-    def jot(self, input ):
-        with open(self.file, 'a') as f:
+    def jot(self, input):
+        with open(self.full_path, 'a') as f:
             f.write(f'{input}\n')
-            
-    def erase(self):
-        with open(self.file, 'w') as f:
-            f.write('')
-            
-    def rpt_figure(self, fig, name, format):
-        fig.savefig(name, format = format)
-        if self.file_format == 'md':
-            rpt.jot(f'![{name}]({name}.{format})')
-        if self.file_format == 'tex':
-            rpt.jot(f'\\begin{figure}[htp]\n\includegraphics{name.format}')
 
+    def erase(self):
+        with open(self.full_path, 'w') as f:
+            f.write('')
+
+    def savefig(self, fig, caption='', ask_erase=None):
+        if ask_erase == None:
+            ask_erase = input(
+                'Do you want to erase the previous version? [y/n]')
+        if ask_erase == 'y' or ask_erase:
+            self.erase()
+
+        if self.format == 'md':
+            fig.savefig(self.file + '.png', format='png')
+            self.jot(f'![{self.file}]({self.file}.png)')
+
+        if self.format == 'tex':
+
+            fig_format = 'eps'
+
+            fig.savefig(f'{self.file}.{fig_format}', format=fig_format)
+            self.jot(
+                f'\\begin{{figure}}[htp]\n\includegraphics{{{self.file}.{fig_format}}}\n\\caption{{{caption}}}\n\\end{{figure}}')
+
+    def savetable(self, df, caption='', ask_erase=None):
+        if ask_erase == None:
+            ask_erase = input(
+                'Do you want to erase the previous version? [y/n]')
+        if ask_erase == 'y' or ask_erase:
+            self.erase()
+
+        if self.format == 'tex':
+            self.jot(
+                f'\\begin{{table}}\n{df.to_latex()}\n\\caption{{{caption}}}\\end{{table}}')
 # %% From CS230
+
 
 class HyperParams():
     """Class that has the following functions:\n
@@ -56,7 +80,7 @@ class HyperParams():
             self.__dict__.update(params)
         self.__json_path__ = json_path
 
-    def save(self, json_path = None):
+    def save(self, json_path=None):
         if json_path == None:
             json_path = self.__json_path__
         with open(json_path, 'w') as f:
@@ -185,18 +209,22 @@ def load_checkpoint(checkpoint, model, optimizer=None):
     return checkpoint
 
 # %%
+
+
 class DataReport(Report):
     """
     Write Reports for Data Cleaning jobs.
     """
-    def __init__(self, fullname, file_format = 'md'):
-        super().__init__(fullname, file_format)
-        
-    def df_head(self, DF, ncols = 5, nrows = 5):
 
-        table = DF.iloc[:nrows, :ncols].to_markdown(tablefmt="github", floatfmt=".3f")
+    def __init__(self, filename, file_format='md'):
+        super().__init__(filename, file_format)
+
+    def df_head(self, DF, ncols=5, nrows=5):
+
+        table = DF.iloc[:nrows, :ncols].to_markdown(
+            tablefmt="github", floatfmt=".3f")
         self.jot(f'The header of the dataframe is\n\n{table}\n')
-        
+
     def copy(self, file):
         with open(file, 'r') as f:
             content = f.read()
@@ -204,20 +232,21 @@ class DataReport(Report):
 
 # %%
 
+
 class Timer():
     """
     Keep log of time
     """
-    
+
     def __init__(self):
         pass
 
     def start(self):
         self.ctime = dt.now()
-    
+
     def click(self):
-        self.lapse = dt.now() - self.ctime 
+        self.lapse = dt.now() - self.ctime
         print(self.lapse.total_seconds())
-        
+
 
 # %%
