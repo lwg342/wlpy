@@ -17,9 +17,9 @@ class WLCovariance():
         self.S_sample = self.sample_cov()
         self.S_lw = self.lw_lin_shrink()
         self.S_nlshrink = self.nonlin_shrink()
-        
+
     def sample_cov(self):
-        _S = np.cov(np.array(self.X), rowvar= False)
+        _S = np.cov(np.array(self.X), rowvar=False)
         return _S
 
     def lw_lin_shrink(self):
@@ -33,7 +33,7 @@ class WLCovariance():
         S_nlshrink = nls.shrink_cov(self.X)
         return S_nlshrink
 
-    def network_hard_threshold(self, G, est_cov = None):
+    def network_hard_threshold(self, G, est_cov=None):
         """
         This calculates the hard-threshold estimator using a network matrix G. 
         The original estimator is est_cov
