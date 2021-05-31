@@ -179,9 +179,10 @@ class LocLin(OLS):
         IXE = self.add_constant(XE, self.N)
         
         h = 1/(self.N**(1/(4+self.k))) * 1.06 * self.X.std(0)
-        # W = np.diag(gaussian_pdf(XE/h).prod(1)/h.prod())
+        # W = np.diag(Epanechnikov(XE/h).prod(1)/h.prod())
+        # beta_hat = LA.inv(IXE.T@W@IXE + 1e-10 * np.eye(self.k+1)) @ IXE.T@W@self.Y
         W = np.diag(gaussian_pdf(XE/h).prod(1)/h.prod())
-        beta_hat =LA.inv(IXE.T@W@IXE) @ IXE.T@W@self.Y
+        beta_hat = LA.inv(IXE.T@W@IXE) @ IXE.T@W@self.Y
         return beta_hat
     
     def vec_fit(self, vec_xe):
