@@ -184,24 +184,20 @@ class LocLin(OLS):
         beta_hat =LA.inv(IXE.T@W@IXE) @ IXE.T@W@self.Y
         return beta_hat
     
-    def vec_fit(self, vec_xe, L):
+    def vec_fit(self, vec_xe):
         list_beta_hat = np.concatenate(
             [self.fit(xe).tolist() for xe in vec_xe], axis = 1)
         return list_beta_hat            
 
     # Perhaps we can speed up by using einsum 
-<<<<<<< HEAD
     def _temp(self, xe: np.array):
-=======
-    def _temp(self, xe: np.array, L):
->>>>>>> 022bef903af6fcdd4200ea680dfcd2d46f222d00
         XE = np.einsum("nk,l -> lnk" , self.X, np.ones(L)) - np.einsum("lk,n -> lnk", xe, np.ones(self.N))
         IXE = np.concatenate([np.ones([20, 1000, 1]), XE], 2)
         h = 1/(self.N**(1/(4+self.k))) * 1.06 * self.X.std(0)
         W = np.einsum('lnk -> ln', Epanechnikov(XE/h))/h.prod()
         W = np.einsum('ln, nk -> lnk', W, np.eye(self.N))
         # beta_hat = self.N * np.inv(IXE.T@W@IXE/self.N) @ IXE.T@W@self.Y
-        
+        return None
 # %%
 
 
