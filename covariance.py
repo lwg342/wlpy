@@ -7,7 +7,7 @@ import numpy as np
 # %%
 
 
-class WLCovariance():
+class Covariance():
     def __init__(self, DF_TxN):
         """
         Covariance estimation from the observations X:T*N
