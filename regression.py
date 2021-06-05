@@ -5,6 +5,32 @@ from matplotlib import pyplot as plt
 import statsmodels.api as sm
 from scipy import stats as ST
 from scipy import linalg as LA
+import torch
+# %% Kernel Functions
+
+
+def gaussian_pdf(x, device="cpu"):
+    if device == "cpu":
+        p = ST.norm.pdf(x)
+    else:
+        if type(x) != torch.Tensor:
+            x = torch.tensor(x)
+        p = 1/np.sqrt(2 * np.pi)*torch.exp(-0.5*(x**2))
+    return p
+
+
+def Epanechnikov(z: np.array) -> np.array:
+    """Generate Epanechnikov Kernel evaluation at z
+
+    Args:
+        z (np.array): The locations at which to evaluate the Epanechnikov function
+
+    Returns:
+        np.array: Return E(z)
+    """
+    K = ((1 - z**2).clip(0)) * 0.75
+    return K
+
 
 # # OLS Regression Class
 # Return OLS estimate of the conditional mean as a col.vector %% OLS parameter estimate
@@ -34,35 +60,55 @@ class Regression():
             ax.plot(x_eval, f(x_eval))
 
 
-class OLS(Regression):
-    '''
-    Here we have an OLS/GLS regression
-    Input: X, Y in a linear regression Y = X @ beta + epsilon
-    Return: \n
-        - beta_hat(intercept = 1 or 0): estimated beta
-        - y_hat(intercept = 1 or 0): estimated y
-    '''
 
-    def __init__(self, X, Y):
-        self.X = X
-        self.Y = Y
-        assert(X.shape[0] == Y.shape[0])
-
-    def beta_hat(self, intercept=1):
-        if intercept == 1:
-            beta = sm.OLS(self.Y, sm.add_constant(self.X)).fit().params.T
-        elif intercept == 0:
-            beta = sm.OLS(self.Y, self.X).fit().params.T
+class OLS():
+    def __init__(self, X, Y, N, k, device = "cpu"):
+        self.device = torch.device(
+            "cuda" if torch.cuda.is_available() else "cpu")
+        self.N = N
+        self.k = k
+        self.device = device
+        if device == "cpu":
+            self.X = np.array(X).reshape([N, k])
+            self.Y = np.array(Y).reshape([N, 1])
+            self.IX = self.add_constant(self.X, self.N)
+        elif device == "cuda":
+            self.X = torch.tensor(X).reshape([N, k])
+            self.Y = torch.tensor(Y).reshape([N, 1])
+            self.IX = self.add_constant(self.X, self.N)
+            
+    def add_constant(self, X, N):
+        if self.device == "cpu":
+            IX = np.concatenate([np.ones([N, 1]), X], 1)
+        elif self.device == "cuda":
+            IX = torch.cat(
+                [torch.ones([N, 1], device=self.device), X], 1)
+        return IX
+    
+    def beta_hat(self, add_intercept=True):
+        if add_intercept:
+            X = self.IX
         else:
-            print('Intercept error.')
+            X = self.X
+        Y = self.Y
+        if self.device == "cpu":
+            beta = LA.inv(X.transpose()@X)@X.transpose()@Y
+        elif self.device == "cuda":
+            V = torch.inverse(X.transpose(1, 0)@X)
+            W = X.transpose(1, 0)@Y
+            beta = torch.matmul(V, W)
+        self.beta_est = beta
         return beta
 
-    def y_hat(self, intercept=1):
-        if intercept == 1:
-            m = sm.OLS(self.Y, sm.add_constant(self.X)).fit().predict()
-        elif intercept == 0:
-            m = sm.OLS(self.Y, self.X).fit().predict()
-        return m
+    def y_hat(self, add_intercept=True):
+        if add_intercept:
+            X = self.IX
+        else:
+            X = self.X
+        beta = self.beta_hat()
+        
+        y_hat = X@beta
+        return y_hat
 
 # %%
 # -> Created on 28 October 2020
@@ -73,7 +119,6 @@ class BSpline(OLS):
     """
     This is the class of B-Spline Models
     """
-    import scipy.interpolate as interpolate
 
     def __init__(self, X, Y, n_degree=3):
         self.X = X
@@ -118,26 +163,42 @@ class BSpline(OLS):
 # It can be used for multidimensional case. The plot is different
 
 
-def loc_poly(Y, X, X_eval):
-    N = X.shape[0]
-    k = np.linalg.matrix_rank(X)
-    m = np.empty(len(X_eval))
-    i = 0
-    h = 1/(N**(1/5))
-    # grid = np.arange(start=X.min(), stop=X.max(), step=np.ptp(X)/200)
-    for x in X_eval:
-        Xx = X - (np.ones([N, 1]))*x
-        Xx1 = sm.add_constant(Xx)
-        Wx = np.diag(ST.norm.pdf(Xx.T/h)[0])
-        Sx = ((Xx1.T)@Wx@Xx1 + 1e-90*np.eye(k))
-        m[i] = ((LA.inv(Sx)) @ (Xx1.T) @ Wx @ Y)[0]
-        i = i + 1
-    # plt.figure()
-    # plt.scatter(X, Y)
-    # plt.plot(grid, m, color= 'red')
-    # plt.scatter(X, m, color='red')
-    return m
+class LocLin(OLS):
+    def __init__(self,X, Y, N, k, return_derivative=False, device='cpu'):
+        super().__init__(X, Y, N, k, device)
+        self.return_derivative = return_derivative
+        
+    def fit(self, xe: np.array):
+        """Fit loc-polynomial of order p at evaluation points xe
 
+        See page 298 of Fan and Gijbels
+        Args:
+            xe (np.array): evaluation points of shape L*k
+        """
+        XE = self.X - np.outer(np.ones(self.N),xe)
+        IXE = self.add_constant(XE, self.N)
+        
+        h = 1/(self.N**(1/(4+self.k))) * 1.06 * self.X.std(0)
+        # W = np.diag(Epanechnikov(XE/h).prod(1)/h.prod())
+        # beta_hat = LA.inv(IXE.T@W@IXE + 1e-10 * np.eye(self.k+1)) @ IXE.T@W@self.Y
+        W = np.diag(gaussian_pdf(XE/h).prod(1)/h.prod())
+        beta_hat = LA.inv(IXE.T@W@IXE) @ IXE.T@W@self.Y
+        return beta_hat
+    
+    def vec_fit(self, vec_xe):
+        list_beta_hat = np.concatenate(
+            [self.fit(xe).tolist() for xe in vec_xe], axis = 1)
+        return list_beta_hat            
+
+    # Perhaps we can speed up by using einsum 
+    def _temp(self, xe: np.array):
+        XE = np.einsum("nk,l -> lnk" , self.X, np.ones(L)) - np.einsum("lk,n -> lnk", xe, np.ones(self.N))
+        IXE = np.concatenate([np.ones([20, 1000, 1]), XE], 2)
+        h = 1/(self.N**(1/(4+self.k))) * 1.06 * self.X.std(0)
+        W = np.einsum('lnk -> ln', Epanechnikov(XE/h))/h.prod()
+        W = np.einsum('ln, nk -> lnk', W, np.eye(self.N))
+        # beta_hat = self.N * np.inv(IXE.T@W@IXE/self.N) @ IXE.T@W@self.Y
+        return None
 # %%
 
 
@@ -171,3 +232,4 @@ def matlocl(data, x_eval):
 # M.Y
 
 # %%
+
