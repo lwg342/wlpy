@@ -16,7 +16,7 @@ class Covariance():
         self.T, self.N = DF_TxN.shape
         self.S_sample = self.sample_cov()
         self.S_lw = self.lw_lin_shrink()
-        self.S_nlshrink = self.nonlin_shrink()
+        # self.S_nlshrink = self.nonlin_shrink()
 
     def sample_cov(self):
         _S = np.cov(np.array(self.X), rowvar=False)
