@@ -2,10 +2,10 @@
 import scipy.interpolate as interpolate
 import numpy as np
 from matplotlib import pyplot as plt
-import statsmodels.api as sm
 from scipy import stats as ST
 from scipy import linalg as LA
 import torch
+import pandas as pd
 # %% Kernel Functions
 
 
@@ -61,16 +61,39 @@ class Regression():
 
 
 
+# %% 
 class OLS():
-    def __init__(self, X, Y, N, k, device = "cpu"):
+    def __init__(self, X, Y, N = None, k = None, num_y = 1, device = "cpu"):
+        """Perform an OLS regression
+
+        Args:
+            X (array, tensor or dataframe): The covariates, of shape N*k
+            Y (numpy.array): The explained variable of shape N*num_y
+            N (int): sample size
+            k (int): column rank of X
+            num_y (int, optional): [description]. Defaults to 1.
+            device (str, optional): Whether use numpy or tensor on CPU or GPU. Defaults to "cpu".
+        """        
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")
+        if N ==None:
+            N = X.shape[0]
+        if k == None:
+            k = X.shape[1]
         self.N = N
         self.k = k
         self.device = device
+        self.isDF = (type(X) == pd.DataFrame)
+        
+        if self.isDF:
+            xcol = X.columns
+            ycol = Y.columns
+            xindex = X.index
+            ## Unfinished
+        
         if device == "cpu":
             self.X = np.array(X).reshape([N, k])
-            self.Y = np.array(Y).reshape([N, 1])
+            self.Y = np.array(Y).reshape([N, num_y])
             self.IX = self.add_constant(self.X, self.N)
         elif device == "cuda":
             self.X = torch.tensor(X).reshape([N, k])
