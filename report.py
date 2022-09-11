@@ -28,7 +28,7 @@ class Report():
         with open(self.full_path, 'w') as f:
             f.write('')
 
-    def savefig(self, fig, caption='', ask_erase=None):
+    def savefig(self, fig, caption='', ask_erase=None, **kwargs):
         if ask_erase == None:
             ask_erase = input(
                 'Do you want to erase the previous version? [y/n]')
@@ -40,14 +40,12 @@ class Report():
             self.jot(f'![{self.file}]({self.file}.png)')
 
         if self.format == 'tex':
-
             fig_format = 'eps'
-
             fig.savefig(f'{self.file}.{fig_format}', format=fig_format)
             self.jot(
                 f'\\begin{{figure}}[htp]\n\includegraphics{{{self.file}.{fig_format}}}\n\\caption{{{caption}}}\n\\end{{figure}}')
 
-    def savetable(self, df, caption='', ask_erase=None):
+    def savetable(self, df, caption='', ask_erase=None,escape = False,position = 'ht', bold_rows = True, **kwargs):
         if ask_erase == None:
             ask_erase = input(
                 'Do you want to erase the previous version? [y/n]')
@@ -55,8 +53,7 @@ class Report():
             self.erase()
 
         if self.format == 'tex':
-            self.jot(
-                f'\\begin{{table}}\n{df.to_latex()}\n\\caption{{{caption}}}\\end{{table}}')
+            self.jot(df.to_latex(bold_rows=bold_rows, position=position, caption=caption, escape=escape,**kwargs)) 
 # %% From CS230
 
 
