@@ -17,23 +17,23 @@ class Covariance():
         """
         Covariance estimation from the observations X:T*N
         """
-        self.X = DF_TxN
+        self.sample = DF_TxN
         self.T, self.N = DF_TxN.shape
         self.sample_cov_estimate = self.sample_cov()
 
     def sample_cov(self):
-        sample_cov_estimate = np.cov(np.array(self.X), rowvar=False)
+        sample_cov_estimate = np.cov(np.array(self.sample), rowvar=False)
         return sample_cov_estimate
 
     def linear_shrinkage(self):
         """
         Ledoit and Wolf 2004
         """
-        S_lw = sk_cov.LedoitWolf().fit(self.X).covariance_
+        S_lw = sk_cov.LedoitWolf().fit(self.sample).covariance_
         return S_lw
 
     def nonlinear_shrinkage(self):
-        S_nlshrink = nls.shrink_cov(self.X)
+        S_nlshrink = nls.shrink_cov(self.sample)
         return S_nlshrink
 
     def network_hard_threshold(self, G, cov_mat=None):
