@@ -5,10 +5,11 @@ from sklearn import covariance as sk_cov
 import nonlinshrink as nls
 import numpy as np
 from wlpy.gist import generalized_threshold
+
 # %%
 
 
-class Covariance():
+class Covariance:
     """
     Several Estimators for Covariance Matrix Given a Sample of Size T*N or N*p
     """
@@ -38,8 +39,8 @@ class Covariance():
 
     def network_hard_threshold(self, G, cov_mat=None):
         """
-        This calculates the hard-threshold estimator using a network matrix G. 
-        The original estimator is cov_mat 
+        This calculates the hard-threshold estimator using a network matrix G.
+        The original estimator is cov_mat
         """
         if cov_mat == None:
             _S = self.sample_cov_estimate
@@ -48,22 +49,26 @@ class Covariance():
         _S[np.where((G + np.eye(self.N)) == 0)] = 0
         return _S
 
-    def threshold_corr(self, cov_mat=None, thresholding_method="soft", regularization_constant=2):
+    def threshold_corr(
+        self, cov_mat=None, thresholding_method="soft", regularization_constant=2
+    ):
         if cov_mat == None:
             cov_mat = self.sample_cov_estimate
         else:
             cov_mat = cov_mat
-        rate = np.sqrt((np.log(self.N))/self.T)
+        rate = np.sqrt((np.log(self.N)) / self.T)
 
         if thresholding_method == "soft":
-            threshold_matrix = np.ones(
-                (self.N, self.N))*rate*regularization_constant
-            threshold_matrix = threshold_matrix - \
-                np.diag(np.diag(threshold_matrix))
+            threshold_matrix = (
+                np.ones((self.N, self.N)) * rate * regularization_constant
+            )
+            threshold_matrix = threshold_matrix - np.diag(np.diag(threshold_matrix))
 
             diag_vals = np.sqrt(np.diag(cov_mat))
             corr_mat = cov_mat / np.outer(diag_vals, diag_vals)
 
-            return np.outer(diag_vals, diag_vals) * generalized_threshold(corr_mat, threshold_matrix, method="soft threshold")
+            return np.outer(diag_vals, diag_vals) * generalized_threshold(
+                corr_mat, threshold_matrix, method="soft threshold"
+            )
         else:
             raise NotImplementedError("Other methods are not implemented yet")
