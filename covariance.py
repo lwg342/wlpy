@@ -4,7 +4,7 @@
 from sklearn import covariance as sk_cov
 import nonlinshrink as nls
 import numpy as np
-from wlpy.gist import generalized_threshold
+
 
 # %%
 
@@ -72,3 +72,65 @@ class Covariance:
             )
         else:
             raise NotImplementedError("Other methods are not implemented yet")
+        
+def generalized_threshold(S: np.ndarray, T: np.ndarray, method, **kwargs) -> np.ndarray:
+    """
+    H = [h_ij] where h_ij(s_ij, t_ij) computes the generalized shrinkaged estimates
+    This function applies generalized thresholding to a matrix M \n
+    M : input matrix \n
+    method: specify the name of the generalized thresholding function\n
+    """
+    assert S.shape == T.shape
+    if method == "hard threshold":
+        H = S
+        H[np.where(np.abs(H) < T)] = 0
+    elif method == "old soft threshold":
+        dim1, dim2 = S.shape
+        vec_sgn = np.sign(S.flatten())
+        vec_value = np.maximum(np.zeros(dim1 * dim2), np.abs(S.flatten()) - T.flatten())
+        H = (vec_sgn * vec_value).reshape(dim1, dim2)
+    elif method == "soft threshold":
+        H = np.sign(S) * ((np.abs(S) - T).clip(0))
+    elif method == "soft threshold with sign":
+        H = kwargs["sign"] * ((np.abs(S) - T).clip(0))
+    else:
+        print("unfinished")
+        H = None
+    return H
+
+
+# %%
+def isPD(Hermitian_Matrix):
+    """
+    Judge if a **symmetric** matrix M is pd
+    """
+    try:
+        np.linalg.cholesky(Hermitian_Matrix)
+        # print('success')
+        return True
+    except np.linalg.LinAlgError:
+        return False
+
+
+# %%
+
+
+def isPSD(A, tol=1e-8):
+    E = np.linalg.eigvalsh(A)
+    return np.all(E > -tol)
+
+
+# %%
+import scipy.linalg as LA
+
+
+def make_pd(A, tol=-1e-8):
+    E = LA.eigvalsh(A)
+    if np.any(E < tol):
+        print("There are very small eigenvalues, might not be a good idea to truncate.")
+        return None
+    else:
+        Ec = E.clip(0) + 1e-10
+        V = LA.eigh(A)[1]
+        Ac = V @ np.diag(Ec) @ V.T
+        return Ac
