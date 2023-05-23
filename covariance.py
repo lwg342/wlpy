@@ -134,3 +134,32 @@ def make_pd(A, tol=-1e-8):
         V = LA.eigh(A)[1]
         Ac = V @ np.diag(Ec) @ V.T
         return Ac
+
+# %% 
+def hac_cov(residuals: np.ndarray, lags: int = None) -> np.ndarray:
+    """Calculate the heteroskedasticity and autocorrelation consistent (HAC) covariance matrix of a given set of residuals.
+    
+    Parameters
+    ----------
+    residuals : np.ndarray
+        The residuals to calculate the HAC covariance matrix for. Should be a 1D or 2D array of (nfeature, nsample). 
+    lags : int, optional
+        The number of lags to use in the calculation, by default None
+    
+    Returns
+    -------
+    np.ndarray
+        The HAC covariance matrix.
+    """
+    if residuals.ndim == 1:
+        residuals = residuals[np.newaxis,:]
+    p,n = residuals.shape
+    covariance = residuals @ residuals.T
+    weights = np.zeros((lags + 1, 1))
+    if lags == None:
+        lags = np.floor(n**(1/4))
+    for i in range(1,lags + 1):
+        weights[i] = 1 - (i / (lags + 1))
+        covariance += weights[i] * (residuals[:,i:] @ residuals[:,:-i].T)
+    covariance /= n
+    return covariance
