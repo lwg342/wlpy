@@ -151,3 +151,9 @@ def make_pd(A, tol=-1e-8):
         V = LA.eigh(A)[1]
         Ac = V @ np.diag(Ec) @ V.T
         return Ac
+    
+    
+def current_time(dt_format='%Y%m%d%H'):
+    from datetime import datetime
+    timestr = datetime.now().strftime(dt_format)
+    return timestr
