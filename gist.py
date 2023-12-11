@@ -153,7 +153,7 @@ def make_pd(A, tol=-1e-8):
         return Ac
     
     
-def current_time(dt_format='%Y%m%d%H'):
+def current_time(dt_format='%Y%m%d%H%M'):
     from datetime import datetime
     timestr = datetime.now().strftime(dt_format)
     return timestr

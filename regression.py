@@ -205,7 +205,7 @@ class LocLin(OLS):
         Returns:
             y_prediction (float): The predicted value of the response variable.
         """
-        XE = self.X - np.outer(np.ones(self.N), xe)
+        XE = self.X - xe[np.newaxis, :]
         IXE = self.add_constant(XE, self.N)
 
         h = 1 / (self.N ** (1 / (4 + self.k))) * 1.06 * self.X.std(0)
